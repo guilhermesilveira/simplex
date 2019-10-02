@@ -1,0 +1,112 @@
+% código de 18/9/2009
+
+
+% o programa imprimira o tableou a cada passo da iteracao!
+
+
+% a funcao a seguir configura o nosso sistema
+% nele, voce deve ja ter normalizado as expressoes
+% sao 5 variaveis que voce deve configurar:
+
+% dim representa a dimensao, o numero de variaveis livres do seu sistema
+% a e a matriz base
+% v1 sao os valores iniciais
+% v2 e tudo zero
+% x sao os valores livres iniciais
+% portanto sua matriz fica:
+% [a   b  x]
+% [v1 v2  0]
+
+function [dim,matriz] = configura()
+  dim = 3;
+
+  a = [2 1 1; 4 2 3; 2 5 5]; % define a matriz base
+  v1 = [-1 -2 1];
+  v2 = [0 0 0];
+  x = [14; 28; 30; 0];
+
+  b = eye(dim)
+  parcial = [a b; v1 v2];
+  matriz = [parcial x];
+
+endfunction
+
+
+
+
+
+
+
+% dada a matriz e a dimensao base,
+% retorna a coluna pivo
+function y = proximo_pivot( matriz, dim )
+  pivos = matriz(dim+1, 1:2*dim); % extrai a porcao pivo
+  min_val = min(pivos);         % encontra o menor valor
+  if min_val>=0
+    y = -1;                    % se nao existe nenhum valor negativo, finalizamos
+  else
+    posicoes_com_min = pivos==min_val;
+    y = find(posicoes_com_min, 1);    % devolve qual a coluna que possui o menor valor
+  endif
+endfunction
+
+% extrai os divisores para uma coluna pivot especifica
+function divisores = divisores_para( matriz, coluna_pivot, dim)
+  divisores = matriz(1:dim, coluna_pivot);
+endfunction
+
+% extrai os valores da direita ja dividos pelos respectivos divisores
+function y = direita_para(matriz, divisores, dim)
+  y = (matriz(1:dim, dim*2+1));
+  for i = 1:dim
+    y(i) = y(i)/divisores(i);
+  endfor
+endfunction
+
+% devolve o menor nao negativo de um vetor
+function y=menor_nao_negativo(matriz,dim)
+  y = -1;
+  for i=1:dim
+    if (matriz(i)>0) && (y==-1 || matriz(i)<=matriz(y))
+      y = i;
+    endif
+  endfor
+endfunction
+
+
+
+% aplica um pivot especifico (linha e coluna) com um divisor especifico para chegar ao proximo passo
+function y = aplica(matriz, pivot_row, pivot_col, divisor, dim)
+  matriz(pivot_row, :) /= divisor;
+  for linha = 1:dim+1
+    if linha!=pivot_row
+      multiplicador = 0 - matriz(linha, pivot_col);
+      matriz(linha,:) += matriz(pivot_row,:)*multiplicador;
+    end
+  endfor
+  y = matriz;
+endfunction
+
+% descobre os pivots e executa o proximo passo
+% retorna 0,matriz quando deve parar
+% ou 1,matriz quando deve continuar
+function [deve_continuar,resultado] = roda_um_passo(matriz, dim)
+  pivot_col = proximo_pivot(matriz, dim)
+  deve_continuar = 0;
+  if pivot_col!=-1
+    deve_continuar = 1;
+    divisores = divisores_para(matriz, pivot_col, dim);
+    nova_direita = direita_para(matriz, divisores, dim);
+    pivot_row = menor_nao_negativo(nova_direita, dim);
+    resultado = aplica(matriz, pivot_row, pivot_col, divisores(pivot_row), dim);
+  else
+    resultado = matriz;
+  endif
+endfunction
+
+[dimensao, matriz] = configura();
+deve_continuar = 1;
+while (deve_continuar==1)
+  [deve_continuar, matriz] = roda_um_passo(matriz, dimensao);
+  matriz
+endwhile
